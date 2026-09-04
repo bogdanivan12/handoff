@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python 3.12, `uv`, FastAPI, SQLAlchemy 2.0 async, `asyncpg`, Alembic, `pydantic-settings`, pytest, httpx; Node/npm, Vite, React, TypeScript, Tailwind CSS v4, shadcn/ui; Docker + docker-compose.
 
-**Spec:** [docs/superpowers/specs/2026-09-05-faza0-scaffolding-design.md](../specs/2026-09-05-faza0-scaffolding-design.md)
+**Spec:** [docs/superpowers/specs/2026-09-05-phase0-scaffolding-design.md](../specs/2026-09-05-phase0-scaffolding-design.md)
 
 ## Global Constraints
 
