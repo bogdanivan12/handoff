@@ -1,10 +1,10 @@
 -- ============================================================
 -- AI-Native Product/Project Management Platform — Schema DDL
--- PostgreSQL 15+ (pgvector extension pentru retrieval semantic viitor)
+-- PostgreSQL 15+ (pgvector extension for future semantic retrieval)
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS vector; -- pgvector, folosit ulterior pt embeddings
+CREATE EXTENSION IF NOT EXISTS vector; -- pgvector, used later for embeddings
 
 -- ============================================================
 -- ENUMS
@@ -18,7 +18,7 @@ CREATE TYPE knowledge_type AS ENUM (
 CREATE TYPE knowledge_scope AS ENUM ('product', 'project');
 
 CREATE TYPE knowledge_status AS ENUM (
-  'draft',        -- propus, în așteptare de review (ex: din AgentSession)
+  'draft',        -- proposed, pending review (e.g. from AgentSession)
   'active',
   'superseded',
   'conflicting',
@@ -91,7 +91,7 @@ CREATE TABLE projects (
 
 CREATE TABLE sprints (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE, -- sprint mereu la nivel de Product
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE, -- sprint is always at the Product level
   name TEXT NOT NULL,
   start_date DATE,
   end_date DATE,
@@ -101,15 +101,15 @@ CREATE TABLE sprints (
 );
 
 -- ============================================================
--- FEATURE (unitatea centrală de refinement + generare)
+-- FEATURE (central unit of refinement + generation)
 -- ============================================================
 
 CREATE TABLE features (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   epic_id UUID NOT NULL REFERENCES epics(id) ON DELETE CASCADE,
-  default_project_id UUID REFERENCES projects(id) ON DELETE SET NULL, -- nullable, doar default
+  default_project_id UUID REFERENCES projects(id) ON DELETE SET NULL, -- nullable, default only
   name TEXT NOT NULL,
-  requirements TEXT, -- refinement content (poate deveni JSONB dacă vrei structură ulterior)
+  requirements TEXT, -- refinement content (could become JSONB later if more structure is needed)
   status TEXT NOT NULL DEFAULT 'draft', -- draft | ready | generating | generated
   acceptance_criteria_format ac_format NOT NULL DEFAULT 'basic',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -127,9 +127,9 @@ CREATE TABLE knowledge_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   type knowledge_type NOT NULL,
   scope knowledge_scope NOT NULL,
-  scope_ref_id UUID NOT NULL, -- product_id sau project_id, în funcție de scope (validat la app-level)
+  scope_ref_id UUID NOT NULL, -- product_id or project_id, depending on scope (validated at the app level)
 
-  -- content structurat per type; shape variază, validat la app-level (Pydantic)
+  -- content structured per type; shape varies, validated at the app level (Pydantic)
   -- decision:        { subject, chosen, alternatives_considered[], rationale }
   -- convention:       { subject, rule, example? }
   -- constraint:       { subject, rule, rationale?, severity }
@@ -138,14 +138,14 @@ CREATE TABLE knowledge_items (
   -- known_issue:      { subject, description, workaround?, status }
   content JSONB NOT NULL,
 
-  confidence NUMERIC(3,2), -- 0.00–1.00, one-time, setat manual sau la extracție
+  confidence NUMERIC(3,2), -- 0.00–1.00, one-time, set manually or at extraction
   provenance knowledge_provenance NOT NULL DEFAULT 'manual',
-  source_ref_type TEXT, -- 'task' | 'agent_session' | NULL (dacă manual)
+  source_ref_type TEXT, -- 'task' | 'agent_session' | NULL (if manual)
   source_ref_id UUID,
 
   status knowledge_status NOT NULL DEFAULT 'active',
 
-  embedding vector(1536), -- opțional, pt retrieval semantic ulterior (pgvector)
+  embedding vector(1536), -- optional, for future semantic retrieval (pgvector)
 
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -167,13 +167,13 @@ CREATE INDEX idx_knowledge_relations_from ON knowledge_relations(from_item_id);
 CREATE INDEX idx_knowledge_relations_to ON knowledge_relations(to_item_id);
 
 -- ============================================================
--- TASK DRAFT (pre-aprobare) & TASK (real)
+-- TASK DRAFT (pre-approval) & TASK (real)
 -- ============================================================
 
 CREATE TABLE task_drafts (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   feature_id UUID NOT NULL REFERENCES features(id) ON DELETE CASCADE,
-  project_id UUID REFERENCES projects(id) ON DELETE SET NULL, -- default = feature.default_project_id, editabil
+  project_id UUID REFERENCES projects(id) ON DELETE SET NULL, -- default = feature.default_project_id, editable
 
   title TEXT NOT NULL,
   context TEXT,
@@ -207,10 +207,10 @@ CREATE TABLE tasks (
   scope TEXT,
   out_of_scope TEXT,
 
-  -- snapshot al KnowledgeItems relevante la momentul generării (nu referință live)
+  -- snapshot of the KnowledgeItems relevant at generation time (not a live reference)
   relevant_knowledge JSONB NOT NULL DEFAULT '[]',
-  -- ex: [{ "knowledge_item_id": "...", "type": "constraint", "content": {...} }, ...]
-  -- knowledge_item_id păstrat doar pt trasabilitate, nu pt live-lookup
+  -- e.g. [{ "knowledge_item_id": "...", "type": "constraint", "content": {...} }, ...]
+  -- knowledge_item_id kept only for traceability, not for live lookup
 
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -222,7 +222,7 @@ CREATE INDEX idx_tasks_sprint ON tasks(sprint_id);
 CREATE INDEX idx_tasks_status ON tasks(status);
 
 -- ============================================================
--- ACCEPTANCE CRITERIA (pe TaskDraft ȘI pe Task)
+-- ACCEPTANCE CRITERIA (on TaskDraft AND on Task)
 -- ============================================================
 
 CREATE TABLE acceptance_criteria (
@@ -233,20 +233,20 @@ CREATE TABLE acceptance_criteria (
   CHECK (
     (task_draft_id IS NOT NULL AND task_id IS NULL) OR
     (task_draft_id IS NULL AND task_id IS NOT NULL)
-  ), -- aparține exact uneia dintre cele două
+  ), -- belongs to exactly one of the two
 
   format ac_format NOT NULL DEFAULT 'basic',
 
-  description TEXT, -- folosit când format = basic
-  given TEXT,        -- folosite când format = gherkin
+  description TEXT, -- used when format = basic
+  given TEXT,        -- used when format = gherkin
   when_ TEXT,
   then_ TEXT,
 
-  position INTEGER NOT NULL DEFAULT 0, -- ordine de afișare
+  position INTEGER NOT NULL DEFAULT 0, -- display order
 
   checked BOOLEAN NOT NULL DEFAULT false,
   checked_at TIMESTAMPTZ,
-  checked_by UUID, -- FK către users, dacă/când se adaugă auth multi-user
+  checked_by UUID, -- FK to users, if/when multi-user auth is added
   notes TEXT,
 
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -256,7 +256,7 @@ CREATE INDEX idx_ac_task_draft ON acceptance_criteria(task_draft_id);
 CREATE INDEX idx_ac_task ON acceptance_criteria(task_id);
 
 -- ============================================================
--- GENERATED PROMPT (proiecție on-demand, nu sursă de adevăr)
+-- GENERATED PROMPT (on-demand projection, not the source of truth)
 -- ============================================================
 
 CREATE TABLE generated_prompts (
@@ -270,14 +270,14 @@ CREATE TABLE generated_prompts (
 CREATE INDEX idx_generated_prompts_task ON generated_prompts(task_id);
 
 -- ============================================================
--- AGENT SESSION (upload conversație agent AI extern)
+-- AGENT SESSION (uploaded external AI agent conversation)
 -- ============================================================
 
 CREATE TABLE agent_sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
 
-  raw_content TEXT NOT NULL, -- conversația uploadată, brută
+  raw_content TEXT NOT NULL, -- the uploaded conversation, raw
 
   extraction_status extraction_status NOT NULL DEFAULT 'pending',
   extracted_summary TEXT,
@@ -289,13 +289,13 @@ CREATE TABLE agent_sessions (
 
 CREATE INDEX idx_agent_sessions_task ON agent_sessions(task_id);
 
--- knowledge_items propuse dintr-un AgentSession sunt rânduri normale în
--- knowledge_items cu: provenance = 'extracted_from_agent_session',
+-- knowledge_items proposed from an AgentSession are normal rows in
+-- knowledge_items with: provenance = 'extracted_from_agent_session',
 -- source_ref_type = 'agent_session', source_ref_id = agent_sessions.id,
--- status = 'draft' până la review-ul userului (care alege și scope-ul final).
+-- status = 'draft' until the user reviews it (and also picks the final scope).
 
 -- ============================================================
--- TRIGGERS: updated_at auto-refresh (opțional, pattern comun)
+-- TRIGGERS: updated_at auto-refresh (common pattern, optional)
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION set_updated_at()
