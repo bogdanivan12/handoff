@@ -1,0 +1,32 @@
+services:
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../backend/.env
+    volumes:
+      - ../backend:/app
+      # If this container fails to start with "Resource busy" removing .venv,
+      # a host-side backend/.venv already exists. Delete it (rm -rf backend/.venv)
+      # and re-run docker-compose up; the isolated venv will be rebuilt inside the container.
+      - /app/.venv
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    env_file:
+      - ../frontend/.env
+    volumes:
+      - ../frontend:/app
+      # If this container fails to start with "Resource busy" removing node_modules,
+      # a host-side frontend/node_modules already exists. Delete it (rm -rf frontend/node_modules)
+      # and re-run docker-compose up; it will be rebuilt inside the container.
+      - /app/node_modules
+    depends_on:
+      - backend
