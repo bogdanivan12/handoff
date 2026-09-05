@@ -8,6 +8,7 @@ import {
   api,
   type Epic,
   type Feature,
+  type FeatureDependency,
   type Initiative,
   type Product,
   type Project,
@@ -29,12 +30,35 @@ export function FeatureDetailPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [openTaskId, setOpenTaskId] = useState<string | "new" | null>(null);
+  const [featureDependencies, setFeatureDependencies] = useState<FeatureDependency[]>([]);
+  const [productFeatures, setProductFeatures] = useState<Feature[]>([]);
+  const [selectedFeatureDependencyId, setSelectedFeatureDependencyId] = useState("");
 
   const loadTasks = () => {
     if (!featureId) return;
     api.listTasks(featureId).then(setTasks).catch(() => {
       // best-effort refresh; the list simply stays stale until the next successful load
     });
+  };
+
+  const loadFeatureDependencies = () => {
+    if (!featureId) return;
+    api.listFeatureDependencies(featureId).then(setFeatureDependencies).catch(() => {
+      // best-effort refresh; the list simply stays stale until the next successful load
+    });
+  };
+
+  const handleAddFeatureDependency = async () => {
+    if (!featureId || !selectedFeatureDependencyId) return;
+    await api.createFeatureDependency(featureId, selectedFeatureDependencyId);
+    setSelectedFeatureDependencyId("");
+    loadFeatureDependencies();
+  };
+
+  const handleRemoveFeatureDependency = async (dependencyId: string) => {
+    if (!featureId) return;
+    await api.deleteFeatureDependency(featureId, dependencyId);
+    loadFeatureDependencies();
   };
 
   const load = () => {
@@ -47,15 +71,30 @@ export function FeatureDetailPage() {
       api.getFeature(featureId),
       api.listProjects(productId),
       api.listTasks(featureId),
+      api.listFeatureDependencies(featureId),
+      api.listFeaturesByProduct(productId),
     ])
-      .then(([productResult, initiativeResult, epicResult, featureResult, projectsResult, tasksResult]) => {
-        setProduct(productResult);
-        setInitiative(initiativeResult);
-        setEpic(epicResult);
-        setFeature(featureResult);
-        setProjects(projectsResult);
-        setTasks(tasksResult);
-      })
+      .then(
+        ([
+          productResult,
+          initiativeResult,
+          epicResult,
+          featureResult,
+          projectsResult,
+          tasksResult,
+          featureDependenciesResult,
+          productFeaturesResult,
+        ]) => {
+          setProduct(productResult);
+          setInitiative(initiativeResult);
+          setEpic(epicResult);
+          setFeature(featureResult);
+          setProjects(projectsResult);
+          setTasks(tasksResult);
+          setFeatureDependencies(featureDependenciesResult);
+          setProductFeatures(productFeaturesResult);
+        },
+      )
       .catch(() => setLoadError(true));
   };
 
@@ -121,6 +160,56 @@ export function FeatureDetailPage() {
             <div className="mt-1 text-sm text-muted-foreground">{task.status}</div>
           </button>
         ))}
+      </div>
+
+      <div className="mt-6">
+        <h3 className="mb-2 text-sm font-semibold">Depends on</h3>
+        <div className="flex flex-col gap-2">
+          {featureDependencies.map((dependency) => (
+            <div key={dependency.id} className="flex items-center justify-between text-sm">
+              <span>
+                <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-mono text-blue-800">
+                  {dependency.depends_on_feature.issue_key}
+                </span>{" "}
+                {dependency.depends_on_feature.name} ({dependency.depends_on_feature.status})
+              </span>
+              <button
+                type="button"
+                onClick={() => handleRemoveFeatureDependency(dependency.id)}
+                className="text-xs underline"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 flex gap-2">
+          <select
+            className="flex-1 rounded border px-2 py-1"
+            value={selectedFeatureDependencyId}
+            onChange={(event) => setSelectedFeatureDependencyId(event.target.value)}
+          >
+            <option value="">Select a feature…</option>
+            {productFeatures
+              .filter(
+                (candidate) =>
+                  candidate.id !== feature.id &&
+                  !featureDependencies.some((dep) => dep.depends_on_feature.id === candidate.id),
+              )
+              .map((candidate) => (
+                <option key={candidate.id} value={candidate.id}>
+                  {candidate.issue_key} — {candidate.name}
+                </option>
+              ))}
+          </select>
+          <Button
+            type="button"
+            onClick={handleAddFeatureDependency}
+            disabled={!selectedFeatureDependencyId}
+          >
+            Add
+          </Button>
+        </div>
       </div>
 
       {openTaskId && (
