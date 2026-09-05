@@ -176,3 +176,19 @@ class KnowledgeItemRead(BaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
+
+
+class KnowledgeRelationCreate(BaseModel):
+    from_item_id: uuid.UUID
+    to_item_id: uuid.UUID
+    relation_type: Literal["supersedes", "conflicts_with", "derived_from", "refines"]
+
+
+class KnowledgeRelationRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    from_item_id: uuid.UUID
+    to_item_id: uuid.UUID
+    relation_type: str
+    created_at: datetime
