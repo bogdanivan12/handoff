@@ -38,6 +38,7 @@ def upgrade() -> None:
         sa.Column(
             "updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
         ),
+        sa.UniqueConstraint("key_prefix", name="uq_products_key_prefix"),
     )
 
     op.create_table(

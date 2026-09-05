@@ -18,7 +18,7 @@ class Product(Base):
     name: Mapped[str] = mapped_column(Text)
     description: Mapped[str | None] = mapped_column(Text, default=None)
     acceptance_criteria_format_default: Mapped[str] = mapped_column(Text, default="basic")
-    key_prefix: Mapped[str] = mapped_column(Text)
+    key_prefix: Mapped[str] = mapped_column(Text, unique=True)
     next_issue_number: Mapped[int] = mapped_column(default=1)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())

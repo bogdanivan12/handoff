@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -6,7 +8,8 @@ client = TestClient(app)
 
 
 def _create_product() -> str:
-    response = client.post("/products", json={"name": "Handoff", "key_prefix": "HAND"})
+    key_prefix = uuid.uuid4().hex[:8].upper()
+    response = client.post("/products", json={"name": "Handoff", "key_prefix": key_prefix})
     return response.json()["id"]
 
 
@@ -60,4 +63,12 @@ def test_delete_initiative(db_session):
     assert response.status_code == 204
 
     response = client.get(f"/initiatives/{initiative_id}")
+    assert response.status_code == 404
+
+
+def test_create_initiative_rejects_missing_product(db_session):
+    response = client.post(
+        "/initiatives",
+        json={"product_id": "00000000-0000-0000-0000-000000000000", "name": "Orphan"},
+    )
     assert response.status_code == 404

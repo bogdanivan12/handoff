@@ -51,3 +51,18 @@ def test_delete_product(db_session):
 
     response = client.get(f"/products/{product_id}")
     assert response.status_code == 404
+
+
+def test_create_product_rejects_duplicate_key_prefix(db_session):
+    client.post("/products", json={"name": "A", "key_prefix": "DUP"})
+    response = client.post("/products", json={"name": "B", "key_prefix": "DUP"})
+    assert response.status_code == 409
+
+
+def test_update_product_rejects_duplicate_key_prefix(db_session):
+    client.post("/products", json={"name": "A", "key_prefix": "AAA"})
+    response = client.post("/products", json={"name": "B", "key_prefix": "BBB"})
+    product_id = response.json()["id"]
+
+    response = client.patch(f"/products/{product_id}", json={"key_prefix": "AAA"})
+    assert response.status_code == 409

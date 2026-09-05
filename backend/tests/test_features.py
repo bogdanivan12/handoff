@@ -55,8 +55,8 @@ def test_feature_issue_numbers_independent_per_product(db_session):
 
 
 def test_list_features_filtered_by_epic(db_session):
-    epic_a = _create_epic()
-    epic_b = _create_epic()
+    epic_a = _create_epic(key_prefix="FEA")
+    epic_b = _create_epic(key_prefix="FEB")
 
     client.post("/features", json={"epic_id": epic_a, "name": "A1"})
     client.post("/features", json={"epic_id": epic_b, "name": "B1"})

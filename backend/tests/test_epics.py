@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -6,7 +8,8 @@ client = TestClient(app)
 
 
 def _create_initiative() -> str:
-    product = client.post("/products", json={"name": "Handoff", "key_prefix": "HAND"}).json()
+    key_prefix = uuid.uuid4().hex[:8].upper()
+    product = client.post("/products", json={"name": "Handoff", "key_prefix": key_prefix}).json()
     initiative = client.post(
         "/initiatives", json={"product_id": product["id"], "name": "Core"}
     ).json()
@@ -63,4 +66,12 @@ def test_delete_epic(db_session):
     assert response.status_code == 204
 
     response = client.get(f"/epics/{epic_id}")
+    assert response.status_code == 404
+
+
+def test_create_epic_rejects_missing_initiative(db_session):
+    response = client.post(
+        "/epics",
+        json={"initiative_id": "00000000-0000-0000-0000-000000000000", "name": "Orphan"},
+    )
     assert response.status_code == 404

@@ -2,6 +2,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db
@@ -21,7 +22,11 @@ async def list_products(db: AsyncSession = Depends(get_db)) -> list[Product]:
 async def create_product(payload: ProductCreate, db: AsyncSession = Depends(get_db)) -> Product:
     product = Product(**payload.model_dump())
     db.add(product)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=409, detail="key_prefix already in use")
     await db.refresh(product)
     return product
 
@@ -43,7 +48,11 @@ async def update_product(
         raise HTTPException(status_code=404, detail="Product not found")
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(product, field, value)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=409, detail="key_prefix already in use")
     await db.refresh(product)
     return product
 
