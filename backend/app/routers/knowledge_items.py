@@ -1,4 +1,5 @@
 import uuid
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
@@ -24,7 +25,7 @@ async def _validate_scope_ref(scope: str, scope_ref_id: uuid.UUID, db: AsyncSess
 
 @router.get("", response_model=list[KnowledgeItemRead])
 async def list_knowledge_items(
-    scope: str = Query(...),
+    scope: Literal["product", "project"] = Query(...),
     scope_ref_id: uuid.UUID = Query(...),
     db: AsyncSession = Depends(get_db),
 ) -> list[KnowledgeItem]:

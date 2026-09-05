@@ -155,12 +155,12 @@ class KnowledgeItemCreate(BaseModel):
     scope_ref_id: uuid.UUID
     content: KnowledgeContent
     confidence: float | None = Field(default=None, ge=0, le=1)
-    provenance: str = "manual"
+    provenance: Literal["manual", "extracted_from_task", "extracted_from_agent_session"] = "manual"
 
 
 class KnowledgeItemUpdate(BaseModel):
     content: KnowledgeContent | None = None
-    status: str | None = None
+    status: Literal["draft", "active", "superseded", "conflicting", "rejected"] | None = None
 
 
 class KnowledgeItemRead(BaseModel):

@@ -176,3 +176,52 @@ def test_delete_knowledge_item(db_session):
 
     response = client.get(f"/knowledge-items/{item_id}")
     assert response.status_code == 404
+
+
+def test_create_knowledge_item_rejects_invalid_confidence(db_session):
+    product_id = _create_product()
+
+    response = client.post(
+        "/knowledge-items",
+        json={
+            "scope": "product",
+            "scope_ref_id": product_id,
+            "content": _decision_content(),
+            "confidence": 12.5,
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_create_knowledge_item_rejects_invalid_provenance(db_session):
+    product_id = _create_product()
+
+    response = client.post(
+        "/knowledge-items",
+        json={
+            "scope": "product",
+            "scope_ref_id": product_id,
+            "content": _decision_content(),
+            "provenance": "not-a-real-provenance",
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_update_knowledge_item_rejects_invalid_status(db_session):
+    product_id = _create_product()
+    response = client.post(
+        "/knowledge-items",
+        json={"scope": "product", "scope_ref_id": product_id, "content": _decision_content()},
+    )
+    item_id = response.json()["id"]
+
+    response = client.patch(f"/knowledge-items/{item_id}", json={"status": "totally-bogus"})
+    assert response.status_code == 422
+
+
+def test_list_knowledge_items_rejects_invalid_scope(db_session):
+    product_id = _create_product()
+
+    response = client.get(f"/knowledge-items?scope=bogus&scope_ref_id={product_id}")
+    assert response.status_code == 422
