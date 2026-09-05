@@ -102,17 +102,25 @@ export function TaskPanel({ taskId, featureId, productId, projects, onClose, onS
 
   const handleAddDependency = async () => {
     if (!taskId || !selectedDependencyId) return;
-    await api.createTaskDependency(taskId, selectedDependencyId);
-    setSelectedDependencyId("");
-    api.listTaskDependencies(taskId).then(setDependencies);
-    api.getTaskIsBlocked(taskId).then(setIsBlocked);
+    try {
+      await api.createTaskDependency(taskId, selectedDependencyId);
+      setSelectedDependencyId("");
+      api.listTaskDependencies(taskId).then(setDependencies);
+      api.getTaskIsBlocked(taskId).then(setIsBlocked);
+    } catch {
+      // selection stays intact; user can retry
+    }
   };
 
   const handleRemoveDependency = async (dependencyId: string) => {
     if (!taskId) return;
-    await api.deleteTaskDependency(taskId, dependencyId);
-    api.listTaskDependencies(taskId).then(setDependencies);
-    api.getTaskIsBlocked(taskId).then(setIsBlocked);
+    try {
+      await api.deleteTaskDependency(taskId, dependencyId);
+      api.listTaskDependencies(taskId).then(setDependencies);
+      api.getTaskIsBlocked(taskId).then(setIsBlocked);
+    } catch {
+      // row stays until a retry succeeds
+    }
   };
 
   return (

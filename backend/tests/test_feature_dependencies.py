@@ -55,6 +55,16 @@ def test_create_feature_dependency_rejects_missing_feature(db_session):
     assert response.status_code == 404
 
 
+def test_create_feature_dependency_rejects_missing_owner_feature(db_session):
+    feature_b, _ = _create_feature()
+
+    response = client.post(
+        "/features/00000000-0000-0000-0000-000000000000/dependencies",
+        json={"depends_on_feature_id": feature_b},
+    )
+    assert response.status_code == 404
+
+
 def test_delete_feature_dependency_rejects_wrong_feature(db_session):
     feature_a, _ = _create_feature()
     feature_b, _ = _create_feature()

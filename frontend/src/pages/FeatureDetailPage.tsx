@@ -50,15 +50,23 @@ export function FeatureDetailPage() {
 
   const handleAddFeatureDependency = async () => {
     if (!featureId || !selectedFeatureDependencyId) return;
-    await api.createFeatureDependency(featureId, selectedFeatureDependencyId);
-    setSelectedFeatureDependencyId("");
-    loadFeatureDependencies();
+    try {
+      await api.createFeatureDependency(featureId, selectedFeatureDependencyId);
+      setSelectedFeatureDependencyId("");
+      loadFeatureDependencies();
+    } catch {
+      // selection stays intact; user can retry
+    }
   };
 
   const handleRemoveFeatureDependency = async (dependencyId: string) => {
     if (!featureId) return;
-    await api.deleteFeatureDependency(featureId, dependencyId);
-    loadFeatureDependencies();
+    try {
+      await api.deleteFeatureDependency(featureId, dependencyId);
+      loadFeatureDependencies();
+    } catch {
+      // row stays until a retry succeeds
+    }
   };
 
   const load = () => {
@@ -163,7 +171,7 @@ export function FeatureDetailPage() {
       </div>
 
       <div className="mt-6">
-        <h3 className="mb-2 text-sm font-semibold">Depends on</h3>
+        <h3 className="mb-2 text-sm font-semibold">This feature depends on</h3>
         <div className="flex flex-col gap-2">
           {featureDependencies.map((dependency) => (
             <div key={dependency.id} className="flex items-center justify-between text-sm">
@@ -219,7 +227,10 @@ export function FeatureDetailPage() {
           featureId={feature.id}
           productId={product.id}
           projects={projects}
-          onClose={() => setOpenTaskId(null)}
+          onClose={() => {
+            setOpenTaskId(null);
+            loadTasks();
+          }}
           onSaved={() => {
             setOpenTaskId(null);
             loadTasks();

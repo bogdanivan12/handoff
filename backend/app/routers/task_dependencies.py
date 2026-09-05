@@ -8,6 +8,7 @@ from sqlalchemy.orm import aliased, selectinload
 from app.db import get_db
 from app.models import Epic, Feature, Initiative, Task, TaskDependency
 from app.schemas import TaskDependencyCreate, TaskDependencyRead, TaskIsBlockedRead
+from app.task_blocking import DONE_STATUS
 
 router = APIRouter(tags=["task-dependencies"])
 
@@ -87,13 +88,14 @@ async def get_task_is_blocked(
     result = await db.execute(
         select(depends_on)
         .join(TaskDependency, TaskDependency.depends_on_task_id == depends_on.id)
-        .where(TaskDependency.task_id == task_id, depends_on.status != "done")
+        .where(TaskDependency.task_id == task_id, depends_on.status != DONE_STATUS)
         .options(
             selectinload(depends_on.feature)
             .selectinload(Feature.epic)
             .selectinload(Epic.initiative)
             .selectinload(Initiative.product)
         )
+        .order_by(TaskDependency.created_at)
     )
     blocking_tasks = list(result.scalars().all())
     return TaskIsBlockedRead(

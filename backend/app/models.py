@@ -182,6 +182,11 @@ class Task(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 
+    # Not a mapped column — set per-request by app.task_blocking.attach_is_blocked.
+    # This default exists so a future endpoint that forgets to call the helper
+    # gets `is_blocked=False` instead of a 500 (TaskRead.is_blocked is required).
+    is_blocked = False
+
     feature: Mapped["Feature"] = relationship()
 
     @property
