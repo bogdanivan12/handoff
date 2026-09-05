@@ -71,6 +71,9 @@ export function ProductDetailPage() {
           <Link to={`/products/${product.id}/settings`} className="text-sm underline">
             Settings
           </Link>
+          <Link to={`/products/${product.id}/knowledge`} className="text-sm underline">
+            Knowledge
+          </Link>
           <Button onClick={() => setShowForm((value) => !value)}>New Initiative</Button>
         </div>
       </div>
