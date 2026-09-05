@@ -1,7 +1,7 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import ForeignKey, Text, func
+from sqlalchemy import Date, ForeignKey, Text, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from app.db_types import GUID
@@ -24,6 +24,12 @@ class Product(Base):
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 
     initiatives: Mapped[list["Initiative"]] = relationship(
+        back_populates="product", cascade="all, delete-orphan"
+    )
+    projects: Mapped[list["Project"]] = relationship(
+        back_populates="product", cascade="all, delete-orphan"
+    )
+    sprints: Mapped[list["Sprint"]] = relationship(
         back_populates="product", cascade="all, delete-orphan"
     )
 
@@ -58,12 +64,42 @@ class Epic(Base):
     features: Mapped[list["Feature"]] = relationship(back_populates="epic", cascade="all, delete-orphan")
 
 
+class Project(Base):
+    __tablename__ = "projects"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID, primary_key=True, default=uuid.uuid4)
+    product_id: Mapped[uuid.UUID] = mapped_column(GUID, ForeignKey("products.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(Text)
+    description: Mapped[str | None] = mapped_column(Text, default=None)
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+
+    product: Mapped["Product"] = relationship(back_populates="projects")
+
+
+class Sprint(Base):
+    __tablename__ = "sprints"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID, primary_key=True, default=uuid.uuid4)
+    product_id: Mapped[uuid.UUID] = mapped_column(GUID, ForeignKey("products.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(Text)
+    start_date: Mapped[date | None] = mapped_column(Date, default=None)
+    end_date: Mapped[date | None] = mapped_column(Date, default=None)
+    status: Mapped[str] = mapped_column(Text, default="planned")
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+
+    product: Mapped["Product"] = relationship(back_populates="sprints")
+
+
 class Feature(Base):
     __tablename__ = "features"
 
     id: Mapped[uuid.UUID] = mapped_column(GUID, primary_key=True, default=uuid.uuid4)
     epic_id: Mapped[uuid.UUID] = mapped_column(GUID, ForeignKey("epics.id", ondelete="CASCADE"))
-    default_project_id: Mapped[uuid.UUID | None] = mapped_column(GUID, default=None)
+    default_project_id: Mapped[uuid.UUID | None] = mapped_column(
+        GUID, ForeignKey("projects.id", ondelete="SET NULL"), default=None
+    )
     name: Mapped[str] = mapped_column(Text)
     requirements: Mapped[str | None] = mapped_column(Text, default=None)
     status: Mapped[str] = mapped_column(Text, default="draft")
