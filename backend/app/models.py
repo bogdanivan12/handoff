@@ -17,9 +17,11 @@ class Product(Base):
     id: Mapped[uuid.UUID] = mapped_column(GUID, primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(Text)
     description: Mapped[str | None] = mapped_column(Text, default=None)
-    acceptance_criteria_format_default: Mapped[str] = mapped_column(Text, default="basic")
+    acceptance_criteria_format_default: Mapped[str] = mapped_column(
+        Text, default="basic", server_default="basic"
+    )
     key_prefix: Mapped[str] = mapped_column(Text, unique=True)
-    next_issue_number: Mapped[int] = mapped_column(default=1)
+    next_issue_number: Mapped[int] = mapped_column(default=1, server_default="1")
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 
@@ -85,7 +87,7 @@ class Sprint(Base):
     name: Mapped[str] = mapped_column(Text)
     start_date: Mapped[date | None] = mapped_column(Date, default=None)
     end_date: Mapped[date | None] = mapped_column(Date, default=None)
-    status: Mapped[str] = mapped_column(Text, default="planned")
+    status: Mapped[str] = mapped_column(Text, default="planned", server_default="planned")
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 
@@ -102,8 +104,10 @@ class Feature(Base):
     )
     name: Mapped[str] = mapped_column(Text)
     requirements: Mapped[str | None] = mapped_column(Text, default=None)
-    status: Mapped[str] = mapped_column(Text, default="draft")
-    acceptance_criteria_format: Mapped[str] = mapped_column(Text, default="basic")
+    status: Mapped[str] = mapped_column(Text, default="draft", server_default="draft")
+    acceptance_criteria_format: Mapped[str] = mapped_column(
+        Text, default="basic", server_default="basic"
+    )
     issue_number: Mapped[int] = mapped_column()
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
