@@ -13,7 +13,13 @@ This project connects to an external Postgres instance (no local Postgres contai
    ```
    Edit `backend/.env` with a real `DATABASE_URL` pointing at a reachable Postgres instance.
 
-2. Start both services:
+2. Apply database migrations:
+   ```bash
+   cd backend && uv run alembic upgrade head
+   ```
+   (Requires network access to the Postgres instance named in `DATABASE_URL` — e.g. `kubectl port-forward svc/data-postgresql -n data 5432:5432` if it's the homelab's shared instance and you're running this from a laptop, not from inside the cluster.)
+
+3. Start both services:
    ```bash
    docker-compose -f infra/docker-compose.yml up --build
    ```

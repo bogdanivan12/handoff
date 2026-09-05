@@ -67,7 +67,12 @@ export function ProductDetailPage() {
 
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{product.name} — Initiatives</h1>
-        <Button onClick={() => setShowForm((value) => !value)}>New Initiative</Button>
+        <div className="flex items-center gap-2">
+          <Link to={`/products/${product.id}/settings`} className="text-sm underline">
+            Settings
+          </Link>
+          <Button onClick={() => setShowForm((value) => !value)}>New Initiative</Button>
+        </div>
       </div>
 
       {showForm && (

@@ -4,6 +4,7 @@ import { EpicDetailPage } from "@/pages/EpicDetailPage";
 import { HealthPage } from "@/pages/HealthPage";
 import { InitiativeDetailPage } from "@/pages/InitiativeDetailPage";
 import { ProductDetailPage } from "@/pages/ProductDetailPage";
+import { ProductSettingsPage } from "@/pages/ProductSettingsPage";
 import { ProductsPage } from "@/pages/ProductsPage";
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
         <Route path="/" element={<ProductsPage />} />
         <Route path="/health" element={<HealthPage />} />
         <Route path="/products/:productId" element={<ProductDetailPage />} />
+        <Route path="/products/:productId/settings" element={<ProductSettingsPage />} />
         <Route
           path="/products/:productId/initiatives/:initiativeId"
           element={<InitiativeDetailPage />}

@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 
@@ -94,5 +94,54 @@ class FeatureRead(BaseModel):
     acceptance_criteria_format: str
     issue_number: int
     issue_key: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class ProjectCreate(BaseModel):
+    product_id: uuid.UUID
+    name: str
+    description: str | None = None
+
+
+class ProjectUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+
+
+class ProjectRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    product_id: uuid.UUID
+    name: str
+    description: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class SprintCreate(BaseModel):
+    product_id: uuid.UUID
+    name: str
+    start_date: date | None = None
+    end_date: date | None = None
+
+
+class SprintUpdate(BaseModel):
+    name: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    status: str | None = None
+
+
+class SprintRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    product_id: uuid.UUID
+    name: str
+    start_date: date | None
+    end_date: date | None
+    status: str
     created_at: datetime
     updated_at: datetime
