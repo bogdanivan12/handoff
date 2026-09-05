@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import CheckConstraint, Date, ForeignKey, JSON, Numeric, Text, func
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, JSON, Numeric, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -201,7 +201,7 @@ class AcceptanceCriterion(Base):
     then_: Mapped[str | None] = mapped_column(Text, default=None)
     position: Mapped[int] = mapped_column(default=0, server_default="0")
     checked: Mapped[bool] = mapped_column(default=False, server_default="false")
-    checked_at: Mapped[datetime | None] = mapped_column(default=None)
+    checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     checked_by: Mapped[uuid.UUID | None] = mapped_column(GUID, default=None)
     notes: Mapped[str | None] = mapped_column(Text, default=None)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())

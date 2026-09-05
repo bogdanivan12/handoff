@@ -123,3 +123,21 @@ def test_delete_criterion(db_session):
 
     response = client.get(f"/tasks/{task_id}/acceptance-criteria")
     assert response.json() == []
+
+
+def test_criterion_checked_at_round_trips_as_timezone_aware(db_session):
+    task_id = _create_task()
+    response = client.post(
+        f"/tasks/{task_id}/acceptance-criteria", json={"format": "basic", "description": "x"}
+    )
+    criterion_id = response.json()["id"]
+
+    # This request would fail with a 500 error (DataError) against real Postgres before the fix,
+    # because the router sets a timezone-aware datetime (datetime.now(timezone.utc)) but the
+    # ORM model column was naively typed. The fix adds DateTime(timezone=True) to the column.
+    response = client.patch(
+        f"/tasks/{task_id}/acceptance-criteria/{criterion_id}", json={"checked": True}
+    )
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+    checked_at = response.json()["checked_at"]
+    assert checked_at is not None
