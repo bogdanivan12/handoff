@@ -235,3 +235,39 @@ class TaskRead(BaseModel):
     position: int | None
     created_at: datetime
     updated_at: datetime
+
+
+class AcceptanceCriterionCreate(BaseModel):
+    format: Literal["basic", "gherkin"] = "basic"
+    description: str | None = None
+    given: str | None = None
+    when_: str | None = None
+    then_: str | None = None
+    position: int = 0
+
+
+class AcceptanceCriterionUpdate(BaseModel):
+    description: str | None = None
+    given: str | None = None
+    when_: str | None = None
+    then_: str | None = None
+    position: int | None = None
+    checked: bool | None = None
+    notes: str | None = None
+
+
+class AcceptanceCriterionRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    task_id: uuid.UUID
+    format: str
+    description: str | None
+    given: str | None
+    when_: str | None
+    then_: str | None
+    position: int
+    checked: bool
+    checked_at: datetime | None
+    notes: str | None
+    created_at: datetime
