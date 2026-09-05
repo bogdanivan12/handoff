@@ -76,6 +76,7 @@ export interface Task {
   position: number | null;
   created_at: string;
   updated_at: string;
+  is_blocked: boolean;
 }
 
 export interface AcceptanceCriterion {
@@ -90,6 +91,39 @@ export interface AcceptanceCriterion {
   checked: boolean;
   checked_at: string | null;
   notes: string | null;
+  created_at: string;
+}
+
+export interface TaskDependencyTaskSummary {
+  id: string;
+  issue_key: string;
+  title: string;
+  status: string;
+}
+
+export interface TaskDependency {
+  id: string;
+  task_id: string;
+  depends_on_task: TaskDependencyTaskSummary;
+  created_at: string;
+}
+
+export interface TaskIsBlocked {
+  is_blocked: boolean;
+  blocking_tasks: TaskDependencyTaskSummary[];
+}
+
+export interface FeatureDependencyFeatureSummary {
+  id: string;
+  issue_key: string;
+  name: string;
+  status: string;
+}
+
+export interface FeatureDependency {
+  id: string;
+  feature_id: string;
+  depends_on_feature: FeatureDependencyFeatureSummary;
   created_at: string;
 }
 
@@ -191,4 +225,30 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ checked }),
     }),
+
+  listTasksByProduct: (productId: string) => request<Task[]>(`/tasks?product_id=${productId}`),
+
+  listTaskDependencies: (taskId: string) =>
+    request<TaskDependency[]>(`/tasks/${taskId}/dependencies`),
+  createTaskDependency: (taskId: string, dependsOnTaskId: string) =>
+    request<TaskDependency>(`/tasks/${taskId}/dependencies`, {
+      method: "POST",
+      body: JSON.stringify({ depends_on_task_id: dependsOnTaskId }),
+    }),
+  deleteTaskDependency: (taskId: string, dependencyId: string) =>
+    request<void>(`/tasks/${taskId}/dependencies/${dependencyId}`, { method: "DELETE" }),
+  getTaskIsBlocked: (taskId: string) => request<TaskIsBlocked>(`/tasks/${taskId}/is-blocked`),
+
+  listFeaturesByProduct: (productId: string) =>
+    request<Feature[]>(`/features?product_id=${productId}`),
+
+  listFeatureDependencies: (featureId: string) =>
+    request<FeatureDependency[]>(`/features/${featureId}/dependencies`),
+  createFeatureDependency: (featureId: string, dependsOnFeatureId: string) =>
+    request<FeatureDependency>(`/features/${featureId}/dependencies`, {
+      method: "POST",
+      body: JSON.stringify({ depends_on_feature_id: dependsOnFeatureId }),
+    }),
+  deleteFeatureDependency: (featureId: string, dependencyId: string) =>
+    request<void>(`/features/${featureId}/dependencies/${dependencyId}`, { method: "DELETE" }),
 };

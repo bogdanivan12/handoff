@@ -256,6 +256,32 @@ CREATE INDEX idx_ac_task_draft ON acceptance_criteria(task_draft_id);
 CREATE INDEX idx_ac_task ON acceptance_criteria(task_id);
 
 -- ============================================================
+-- DEPENDENCIES
+-- ============================================================
+
+CREATE TABLE task_dependencies (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  depends_on_task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (task_id != depends_on_task_id)
+);
+
+CREATE INDEX idx_task_dependencies_task ON task_dependencies(task_id);
+CREATE INDEX idx_task_dependencies_depends_on ON task_dependencies(depends_on_task_id);
+
+CREATE TABLE feature_dependencies (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  feature_id UUID NOT NULL REFERENCES features(id) ON DELETE CASCADE,
+  depends_on_feature_id UUID NOT NULL REFERENCES features(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (feature_id != depends_on_feature_id)
+);
+
+CREATE INDEX idx_feature_dependencies_feature ON feature_dependencies(feature_id);
+CREATE INDEX idx_feature_dependencies_depends_on ON feature_dependencies(depends_on_feature_id);
+
+-- ============================================================
 -- GENERATED PROMPT (on-demand projection, not the source of truth)
 -- ============================================================
 

@@ -1,17 +1,25 @@
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { api, type AcceptanceCriterion, type Project, type Task } from "@/lib/api";
+import {
+  api,
+  type AcceptanceCriterion,
+  type Project,
+  type Task,
+  type TaskDependency,
+  type TaskIsBlocked,
+} from "@/lib/api";
 
 interface TaskPanelProps {
   taskId: string | null;
   featureId: string;
+  productId: string;
   projects: Project[];
   onClose: () => void;
   onSaved: () => void;
 }
 
-export function TaskPanel({ taskId, featureId, projects, onClose, onSaved }: TaskPanelProps) {
+export function TaskPanel({ taskId, featureId, productId, projects, onClose, onSaved }: TaskPanelProps) {
   const [task, setTask] = useState<Task | null>(null);
   const [criteria, setCriteria] = useState<AcceptanceCriterion[]>([]);
   const [title, setTitle] = useState("");
@@ -19,6 +27,10 @@ export function TaskPanel({ taskId, featureId, projects, onClose, onSaved }: Tas
   const [projectId, setProjectId] = useState(projects[0]?.id ?? "");
   const [status, setStatus] = useState("todo");
   const [context, setContext] = useState("");
+  const [dependencies, setDependencies] = useState<TaskDependency[]>([]);
+  const [productTasks, setProductTasks] = useState<Task[]>([]);
+  const [selectedDependencyId, setSelectedDependencyId] = useState("");
+  const [isBlocked, setIsBlocked] = useState<TaskIsBlocked | null>(null);
 
   const [acFormat, setAcFormat] = useState<"basic" | "gherkin">("basic");
   const [acDescription, setAcDescription] = useState("");
@@ -36,7 +48,10 @@ export function TaskPanel({ taskId, featureId, projects, onClose, onSaved }: Tas
       setContext(loaded.context ?? "");
     });
     api.listAcceptanceCriteria(taskId).then(setCriteria);
-  }, [taskId]);
+    api.listTaskDependencies(taskId).then(setDependencies);
+    api.listTasksByProduct(productId).then(setProductTasks);
+    api.getTaskIsBlocked(taskId).then(setIsBlocked);
+  }, [taskId, productId]);
 
   const handleSave = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -83,6 +98,29 @@ export function TaskPanel({ taskId, featureId, projects, onClose, onSaved }: Tas
     if (!taskId) return;
     await api.toggleAcceptanceCriterion(taskId, criterionId, checked);
     api.listAcceptanceCriteria(taskId).then(setCriteria);
+  };
+
+  const handleAddDependency = async () => {
+    if (!taskId || !selectedDependencyId) return;
+    try {
+      await api.createTaskDependency(taskId, selectedDependencyId);
+      setSelectedDependencyId("");
+      api.listTaskDependencies(taskId).then(setDependencies);
+      api.getTaskIsBlocked(taskId).then(setIsBlocked);
+    } catch {
+      // selection stays intact; user can retry
+    }
+  };
+
+  const handleRemoveDependency = async (dependencyId: string) => {
+    if (!taskId) return;
+    try {
+      await api.deleteTaskDependency(taskId, dependencyId);
+      api.listTaskDependencies(taskId).then(setDependencies);
+      api.getTaskIsBlocked(taskId).then(setIsBlocked);
+    } catch {
+      // row stays until a retry succeeds
+    }
   };
 
   return (
@@ -220,6 +258,60 @@ export function TaskPanel({ taskId, featureId, projects, onClose, onSaved }: Tas
             )}
             <Button type="submit">Add Criterion</Button>
           </form>
+        </div>
+      )}
+
+      {taskId && (
+        <div className="mt-6">
+          <h3 className="mb-2 text-sm font-semibold">Depends on</h3>
+          {isBlocked?.is_blocked && (
+            <p className="mb-2 rounded bg-yellow-50 p-2 text-sm text-yellow-800">
+              Blocked by {isBlocked.blocking_tasks.length} unresolved{" "}
+              {isBlocked.blocking_tasks.length === 1 ? "dependency" : "dependencies"}.
+            </p>
+          )}
+          <div className="flex flex-col gap-2">
+            {dependencies.map((dependency) => (
+              <div key={dependency.id} className="flex items-center justify-between text-sm">
+                <span>
+                  <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-mono text-blue-800">
+                    {dependency.depends_on_task.issue_key}
+                  </span>{" "}
+                  {dependency.depends_on_task.title} ({dependency.depends_on_task.status})
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveDependency(dependency.id)}
+                  className="text-xs underline"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 flex gap-2">
+            <select
+              className="flex-1 rounded border px-2 py-1"
+              value={selectedDependencyId}
+              onChange={(event) => setSelectedDependencyId(event.target.value)}
+            >
+              <option value="">Select a task…</option>
+              {productTasks
+                .filter(
+                  (candidate) =>
+                    candidate.id !== taskId &&
+                    !dependencies.some((dep) => dep.depends_on_task.id === candidate.id),
+                )
+                .map((candidate) => (
+                  <option key={candidate.id} value={candidate.id}>
+                    {candidate.issue_key} — {candidate.title}
+                  </option>
+                ))}
+            </select>
+            <Button type="button" onClick={handleAddDependency} disabled={!selectedDependencyId}>
+              Add
+            </Button>
+          </div>
         </div>
       )}
     </div>

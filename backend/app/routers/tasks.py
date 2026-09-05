@@ -9,6 +9,7 @@ from app.db import get_db
 from app.issue_numbers import allocate_issue_number
 from app.models import Epic, Feature, Initiative, Project, Sprint, Task
 from app.schemas import TaskCreate, TaskRead, TaskUpdate
+from app.task_blocking import attach_is_blocked
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -22,15 +23,30 @@ _EAGER_LOAD = (
 
 @router.get("", response_model=list[TaskRead])
 async def list_tasks(
-    feature_id: uuid.UUID = Query(...), db: AsyncSession = Depends(get_db)
+    feature_id: uuid.UUID | None = Query(default=None),
+    product_id: uuid.UUID | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
 ) -> list[Task]:
-    result = await db.execute(
-        select(Task)
-        .where(Task.feature_id == feature_id)
-        .options(_EAGER_LOAD)
-        .order_by(Task.created_at)
-    )
-    return list(result.scalars().all())
+    if (feature_id is None) == (product_id is None):
+        raise HTTPException(
+            status_code=400, detail="Exactly one of feature_id or product_id is required"
+        )
+
+    if feature_id is not None:
+        query = select(Task).where(Task.feature_id == feature_id)
+    else:
+        query = (
+            select(Task)
+            .join(Feature, Task.feature_id == Feature.id)
+            .join(Epic, Feature.epic_id == Epic.id)
+            .join(Initiative, Epic.initiative_id == Initiative.id)
+            .where(Initiative.product_id == product_id)
+        )
+
+    result = await db.execute(query.options(_EAGER_LOAD).order_by(Task.created_at))
+    tasks = list(result.scalars().all())
+    await attach_is_blocked(db, tasks)
+    return tasks
 
 
 @router.post("", response_model=TaskRead, status_code=201)
@@ -78,7 +94,9 @@ async def create_task(payload: TaskCreate, db: AsyncSession = Depends(get_db)) -
     await db.commit()
 
     result = await db.execute(select(Task).where(Task.id == task.id).options(_EAGER_LOAD))
-    return result.scalar_one()
+    task = result.scalar_one()
+    await attach_is_blocked(db, [task])
+    return task
 
 
 @router.get("/{task_id}", response_model=TaskRead)
@@ -87,6 +105,7 @@ async def get_task(task_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> Ta
     task = result.scalar_one_or_none()
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
+    await attach_is_blocked(db, [task])
     return task
 
 
@@ -110,7 +129,9 @@ async def update_task(
     await db.commit()
 
     result = await db.execute(select(Task).where(Task.id == task_id).options(_EAGER_LOAD))
-    return result.scalar_one()
+    task = result.scalar_one()
+    await attach_is_blocked(db, [task])
+    return task
 
 
 @router.delete("/{task_id}", status_code=204)

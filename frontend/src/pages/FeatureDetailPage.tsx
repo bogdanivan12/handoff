@@ -8,6 +8,7 @@ import {
   api,
   type Epic,
   type Feature,
+  type FeatureDependency,
   type Initiative,
   type Product,
   type Project,
@@ -29,12 +30,43 @@ export function FeatureDetailPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [openTaskId, setOpenTaskId] = useState<string | "new" | null>(null);
+  const [featureDependencies, setFeatureDependencies] = useState<FeatureDependency[]>([]);
+  const [productFeatures, setProductFeatures] = useState<Feature[]>([]);
+  const [selectedFeatureDependencyId, setSelectedFeatureDependencyId] = useState("");
 
   const loadTasks = () => {
     if (!featureId) return;
     api.listTasks(featureId).then(setTasks).catch(() => {
       // best-effort refresh; the list simply stays stale until the next successful load
     });
+  };
+
+  const loadFeatureDependencies = () => {
+    if (!featureId) return;
+    api.listFeatureDependencies(featureId).then(setFeatureDependencies).catch(() => {
+      // best-effort refresh; the list simply stays stale until the next successful load
+    });
+  };
+
+  const handleAddFeatureDependency = async () => {
+    if (!featureId || !selectedFeatureDependencyId) return;
+    try {
+      await api.createFeatureDependency(featureId, selectedFeatureDependencyId);
+      setSelectedFeatureDependencyId("");
+      loadFeatureDependencies();
+    } catch {
+      // selection stays intact; user can retry
+    }
+  };
+
+  const handleRemoveFeatureDependency = async (dependencyId: string) => {
+    if (!featureId) return;
+    try {
+      await api.deleteFeatureDependency(featureId, dependencyId);
+      loadFeatureDependencies();
+    } catch {
+      // row stays until a retry succeeds
+    }
   };
 
   const load = () => {
@@ -47,15 +79,30 @@ export function FeatureDetailPage() {
       api.getFeature(featureId),
       api.listProjects(productId),
       api.listTasks(featureId),
+      api.listFeatureDependencies(featureId),
+      api.listFeaturesByProduct(productId),
     ])
-      .then(([productResult, initiativeResult, epicResult, featureResult, projectsResult, tasksResult]) => {
-        setProduct(productResult);
-        setInitiative(initiativeResult);
-        setEpic(epicResult);
-        setFeature(featureResult);
-        setProjects(projectsResult);
-        setTasks(tasksResult);
-      })
+      .then(
+        ([
+          productResult,
+          initiativeResult,
+          epicResult,
+          featureResult,
+          projectsResult,
+          tasksResult,
+          featureDependenciesResult,
+          productFeaturesResult,
+        ]) => {
+          setProduct(productResult);
+          setInitiative(initiativeResult);
+          setEpic(epicResult);
+          setFeature(featureResult);
+          setProjects(projectsResult);
+          setTasks(tasksResult);
+          setFeatureDependencies(featureDependenciesResult);
+          setProductFeatures(productFeaturesResult);
+        },
+      )
       .catch(() => setLoadError(true));
   };
 
@@ -106,9 +153,10 @@ export function FeatureDetailPage() {
             key={task.id}
             type="button"
             onClick={() => setOpenTaskId(task.id)}
-            className="rounded border p-4 text-left hover:bg-gray-50"
+            className={`rounded border p-4 text-left hover:bg-gray-50 ${task.is_blocked ? "opacity-50" : ""}`}
           >
             <div className="flex items-center gap-2">
+              {task.is_blocked && <span title="Blocked">🔒</span>}
               <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-mono text-blue-800">
                 {task.issue_key}
               </span>
@@ -122,13 +170,67 @@ export function FeatureDetailPage() {
         ))}
       </div>
 
+      <div className="mt-6">
+        <h3 className="mb-2 text-sm font-semibold">This feature depends on</h3>
+        <div className="flex flex-col gap-2">
+          {featureDependencies.map((dependency) => (
+            <div key={dependency.id} className="flex items-center justify-between text-sm">
+              <span>
+                <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-mono text-blue-800">
+                  {dependency.depends_on_feature.issue_key}
+                </span>{" "}
+                {dependency.depends_on_feature.name} ({dependency.depends_on_feature.status})
+              </span>
+              <button
+                type="button"
+                onClick={() => handleRemoveFeatureDependency(dependency.id)}
+                className="text-xs underline"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 flex gap-2">
+          <select
+            className="flex-1 rounded border px-2 py-1"
+            value={selectedFeatureDependencyId}
+            onChange={(event) => setSelectedFeatureDependencyId(event.target.value)}
+          >
+            <option value="">Select a feature…</option>
+            {productFeatures
+              .filter(
+                (candidate) =>
+                  candidate.id !== feature.id &&
+                  !featureDependencies.some((dep) => dep.depends_on_feature.id === candidate.id),
+              )
+              .map((candidate) => (
+                <option key={candidate.id} value={candidate.id}>
+                  {candidate.issue_key} — {candidate.name}
+                </option>
+              ))}
+          </select>
+          <Button
+            type="button"
+            onClick={handleAddFeatureDependency}
+            disabled={!selectedFeatureDependencyId}
+          >
+            Add
+          </Button>
+        </div>
+      </div>
+
       {openTaskId && (
         <TaskPanel
           key={openTaskId}
           taskId={openTaskId === "new" ? null : openTaskId}
           featureId={feature.id}
+          productId={product.id}
           projects={projects}
-          onClose={() => setOpenTaskId(null)}
+          onClose={() => {
+            setOpenTaskId(null);
+            loadTasks();
+          }}
           onSaved={() => {
             setOpenTaskId(null);
             loadTasks();

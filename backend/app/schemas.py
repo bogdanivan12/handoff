@@ -235,6 +235,7 @@ class TaskRead(BaseModel):
     position: int | None
     created_at: datetime
     updated_at: datetime
+    is_blocked: bool
 
 
 class AcceptanceCriterionCreate(BaseModel):
@@ -270,4 +271,53 @@ class AcceptanceCriterionRead(BaseModel):
     checked: bool
     checked_at: datetime | None
     notes: str | None
+    created_at: datetime
+
+
+class TaskDependencyTaskSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    issue_key: str
+    title: str
+    status: str
+
+
+class TaskDependencyCreate(BaseModel):
+    depends_on_task_id: uuid.UUID
+
+
+class TaskDependencyRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    task_id: uuid.UUID
+    depends_on_task: TaskDependencyTaskSummary
+    created_at: datetime
+
+
+class TaskIsBlockedRead(BaseModel):
+    is_blocked: bool
+    blocking_tasks: list[TaskDependencyTaskSummary]
+
+
+class FeatureDependencyFeatureSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    issue_key: str
+    name: str
+    status: str
+
+
+class FeatureDependencyCreate(BaseModel):
+    depends_on_feature_id: uuid.UUID
+
+
+class FeatureDependencyRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    feature_id: uuid.UUID
+    depends_on_feature: FeatureDependencyFeatureSummary
     created_at: datetime

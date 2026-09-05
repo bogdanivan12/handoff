@@ -19,11 +19,26 @@ _EAGER_LOAD = (
 
 @router.get("", response_model=list[FeatureRead])
 async def list_features(
-    epic_id: uuid.UUID = Query(...), db: AsyncSession = Depends(get_db)
+    epic_id: uuid.UUID | None = Query(default=None),
+    product_id: uuid.UUID | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
 ) -> list[Feature]:
-    result = await db.execute(
-        select(Feature).where(Feature.epic_id == epic_id).options(_EAGER_LOAD).order_by(Feature.created_at)
-    )
+    if (epic_id is None) == (product_id is None):
+        raise HTTPException(
+            status_code=400, detail="Exactly one of epic_id or product_id is required"
+        )
+
+    if epic_id is not None:
+        query = select(Feature).where(Feature.epic_id == epic_id)
+    else:
+        query = (
+            select(Feature)
+            .join(Epic, Feature.epic_id == Epic.id)
+            .join(Initiative, Epic.initiative_id == Initiative.id)
+            .where(Initiative.product_id == product_id)
+        )
+
+    result = await db.execute(query.options(_EAGER_LOAD).order_by(Feature.created_at))
     return list(result.scalars().all())
 
 
