@@ -1,12 +1,13 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.db import get_db
-from app.models import Epic, Feature, Initiative, Product
+from app.issue_numbers import allocate_issue_number
+from app.models import Epic, Feature, Initiative
 from app.schemas import FeatureCreate, FeatureRead, FeatureUpdate
 
 router = APIRouter(prefix="/features", tags=["features"])
@@ -36,13 +37,7 @@ async def create_feature(payload: FeatureCreate, db: AsyncSession = Depends(get_
     if initiative is None:
         raise HTTPException(status_code=404, detail="Initiative not found")
 
-    result = await db.execute(
-        update(Product)
-        .where(Product.id == initiative.product_id)
-        .values(next_issue_number=Product.next_issue_number + 1)
-        .returning(Product.next_issue_number)
-    )
-    new_issue_number = result.scalar_one() - 1
+    new_issue_number = await allocate_issue_number(db, initiative.product_id)
 
     feature = Feature(
         epic_id=payload.epic_id,
