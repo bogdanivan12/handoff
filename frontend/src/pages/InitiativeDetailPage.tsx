@@ -13,12 +13,22 @@ export function InitiativeDetailPage() {
   const [epics, setEpics] = useState<Epic[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
+  const [loadError, setLoadError] = useState(false);
 
   const load = () => {
     if (!productId || !initiativeId) return;
-    api.getProduct(productId).then(setProduct);
-    api.getInitiative(initiativeId).then(setInitiative);
-    api.listEpics(initiativeId).then(setEpics);
+    setLoadError(false);
+    Promise.all([
+      api.getProduct(productId),
+      api.getInitiative(initiativeId),
+      api.listEpics(initiativeId),
+    ])
+      .then(([productResult, initiativeResult, epicsResult]) => {
+        setProduct(productResult);
+        setInitiative(initiativeResult);
+        setEpics(epicsResult);
+      })
+      .catch(() => setLoadError(true));
   };
 
   useEffect(() => {
@@ -29,11 +39,26 @@ export function InitiativeDetailPage() {
   const handleCreate = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!initiativeId) return;
-    await api.createEpic({ initiative_id: initiativeId, name });
-    setName("");
-    setShowForm(false);
-    load();
+    try {
+      await api.createEpic({ initiative_id: initiativeId, name });
+      setName("");
+      setShowForm(false);
+      load();
+    } catch {
+      // form stays open with the user's input intact; a real toast/error UI is a later polish pass
+    }
   };
+
+  if (loadError) {
+    return (
+      <div className="mx-auto max-w-2xl p-8">
+        <p className="text-red-600">Couldn't load this page. It may have been deleted.</p>
+        <Link to="/" className="text-sm underline">
+          Back to Products
+        </Link>
+      </div>
+    );
+  }
 
   if (!product || !initiative) return null;
 

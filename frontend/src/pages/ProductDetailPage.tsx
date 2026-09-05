@@ -12,11 +12,17 @@ export function ProductDetailPage() {
   const [initiatives, setInitiatives] = useState<Initiative[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
+  const [loadError, setLoadError] = useState(false);
 
   const load = () => {
     if (!productId) return;
-    api.getProduct(productId).then(setProduct);
-    api.listInitiatives(productId).then(setInitiatives);
+    setLoadError(false);
+    Promise.all([api.getProduct(productId), api.listInitiatives(productId)])
+      .then(([productResult, initiativesResult]) => {
+        setProduct(productResult);
+        setInitiatives(initiativesResult);
+      })
+      .catch(() => setLoadError(true));
   };
 
   useEffect(() => {
@@ -27,11 +33,26 @@ export function ProductDetailPage() {
   const handleCreate = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!productId) return;
-    await api.createInitiative({ product_id: productId, name });
-    setName("");
-    setShowForm(false);
-    load();
+    try {
+      await api.createInitiative({ product_id: productId, name });
+      setName("");
+      setShowForm(false);
+      load();
+    } catch {
+      // form stays open with the user's input intact; a real toast/error UI is a later polish pass
+    }
   };
+
+  if (loadError) {
+    return (
+      <div className="mx-auto max-w-2xl p-8">
+        <p className="text-red-600">Couldn't load this page. It may have been deleted.</p>
+        <Link to="/" className="text-sm underline">
+          Back to Products
+        </Link>
+      </div>
+    );
+  }
 
   if (!product) return null;
 

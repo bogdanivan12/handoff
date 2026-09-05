@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { Button } from "@/components/ui/button";
@@ -18,13 +18,24 @@ export function EpicDetailPage() {
   const [features, setFeatures] = useState<Feature[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
+  const [loadError, setLoadError] = useState(false);
 
   const load = () => {
     if (!productId || !initiativeId || !epicId) return;
-    api.getProduct(productId).then(setProduct);
-    api.getInitiative(initiativeId).then(setInitiative);
-    api.getEpic(epicId).then(setEpic);
-    api.listFeatures(epicId).then(setFeatures);
+    setLoadError(false);
+    Promise.all([
+      api.getProduct(productId),
+      api.getInitiative(initiativeId),
+      api.getEpic(epicId),
+      api.listFeatures(epicId),
+    ])
+      .then(([productResult, initiativeResult, epicResult, featuresResult]) => {
+        setProduct(productResult);
+        setInitiative(initiativeResult);
+        setEpic(epicResult);
+        setFeatures(featuresResult);
+      })
+      .catch(() => setLoadError(true));
   };
 
   useEffect(() => {
@@ -35,11 +46,26 @@ export function EpicDetailPage() {
   const handleCreate = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!epicId) return;
-    await api.createFeature({ epic_id: epicId, name });
-    setName("");
-    setShowForm(false);
-    load();
+    try {
+      await api.createFeature({ epic_id: epicId, name });
+      setName("");
+      setShowForm(false);
+      load();
+    } catch {
+      // form stays open with the user's input intact; a real toast/error UI is a later polish pass
+    }
   };
+
+  if (loadError) {
+    return (
+      <div className="mx-auto max-w-2xl p-8">
+        <p className="text-red-600">Couldn't load this page. It may have been deleted.</p>
+        <Link to="/" className="text-sm underline">
+          Back to Products
+        </Link>
+      </div>
+    );
+  }
 
   if (!product || !initiative || !epic) return null;
 
