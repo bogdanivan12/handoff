@@ -37,7 +37,7 @@ class TechnicalFactContent(BaseModel):
     kind: Literal["technical_fact"] = "technical_fact"
     subject: str
     fact: str
-    verified_at: str | None = None
+    verified_at: str
 
 
 class KnownIssueContent(BaseModel):
@@ -45,7 +45,7 @@ class KnownIssueContent(BaseModel):
     subject: str
     description: str
     workaround: str | None = None
-    status: str = "open"
+    status: str
 
 
 KnowledgeContent = Annotated[
