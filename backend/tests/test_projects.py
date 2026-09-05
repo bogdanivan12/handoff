@@ -8,8 +8,9 @@ client = TestClient(app)
 
 def _create_product() -> str:
     unique_id = str(uuid.uuid4())[:8]
+    key_prefix = uuid.uuid4().hex[:8].upper()
     response = client.post(
-        "/products", json={"name": f"Product-{unique_id}", "key_prefix": f"P{unique_id[:3].upper()}"}
+        "/products", json={"name": f"Product-{unique_id}", "key_prefix": key_prefix}
     )
     return response.json()["id"]
 
