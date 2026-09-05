@@ -106,9 +106,10 @@ export function FeatureDetailPage() {
             key={task.id}
             type="button"
             onClick={() => setOpenTaskId(task.id)}
-            className="rounded border p-4 text-left hover:bg-gray-50"
+            className={`rounded border p-4 text-left hover:bg-gray-50 ${task.is_blocked ? "opacity-50" : ""}`}
           >
             <div className="flex items-center gap-2">
+              {task.is_blocked && <span title="Blocked">🔒</span>}
               <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-mono text-blue-800">
                 {task.issue_key}
               </span>
@@ -127,6 +128,7 @@ export function FeatureDetailPage() {
           key={openTaskId}
           taskId={openTaskId === "new" ? null : openTaskId}
           featureId={feature.id}
+          productId={product.id}
           projects={projects}
           onClose={() => setOpenTaskId(null)}
           onSaved={() => {
