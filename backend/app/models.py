@@ -153,3 +153,55 @@ class KnowledgeRelation(Base):
     __table_args__ = (
         CheckConstraint("from_item_id != to_item_id", name="ck_knowledge_relations_no_self_link"),
     )
+
+
+class Task(Base):
+    __tablename__ = "tasks"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID, primary_key=True, default=uuid.uuid4)
+    feature_id: Mapped[uuid.UUID] = mapped_column(GUID, ForeignKey("features.id", ondelete="CASCADE"))
+    project_id: Mapped[uuid.UUID] = mapped_column(GUID, ForeignKey("projects.id", ondelete="RESTRICT"))
+    sprint_id: Mapped[uuid.UUID | None] = mapped_column(
+        GUID, ForeignKey("sprints.id", ondelete="SET NULL"), default=None
+    )
+    superseded_by_task_id: Mapped[uuid.UUID | None] = mapped_column(
+        GUID, ForeignKey("tasks.id", ondelete="SET NULL"), default=None
+    )
+    title: Mapped[str] = mapped_column(Text)
+    task_type: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text, default="todo", server_default="todo")
+    issue_number: Mapped[int] = mapped_column()
+    outdated_reason: Mapped[str | None] = mapped_column(Text, default=None)
+    context: Mapped[str | None] = mapped_column(Text, default=None)
+    scope: Mapped[str | None] = mapped_column(Text, default=None)
+    out_of_scope: Mapped[str | None] = mapped_column(Text, default=None)
+    position: Mapped[int | None] = mapped_column(default=None)
+    relevant_knowledge: Mapped[list] = mapped_column(
+        JSONB().with_variant(JSON(), "sqlite"), default=list, server_default="[]"
+    )
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+
+    feature: Mapped["Feature"] = relationship()
+
+    @property
+    def issue_key(self) -> str:
+        return f"{self.feature.epic.initiative.product.key_prefix}-{self.issue_number}"
+
+
+class AcceptanceCriterion(Base):
+    __tablename__ = "acceptance_criteria"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID, primary_key=True, default=uuid.uuid4)
+    task_id: Mapped[uuid.UUID] = mapped_column(GUID, ForeignKey("tasks.id", ondelete="CASCADE"))
+    format: Mapped[str] = mapped_column(Text, default="basic", server_default="basic")
+    description: Mapped[str | None] = mapped_column(Text, default=None)
+    given: Mapped[str | None] = mapped_column(Text, default=None)
+    when_: Mapped[str | None] = mapped_column(Text, default=None)
+    then_: Mapped[str | None] = mapped_column(Text, default=None)
+    position: Mapped[int] = mapped_column(default=0, server_default="0")
+    checked: Mapped[bool] = mapped_column(default=False, server_default="false")
+    checked_at: Mapped[datetime | None] = mapped_column(default=None)
+    checked_by: Mapped[uuid.UUID | None] = mapped_column(GUID, default=None)
+    notes: Mapped[str | None] = mapped_column(Text, default=None)
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
