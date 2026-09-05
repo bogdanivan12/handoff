@@ -69,3 +69,30 @@ class EpicRead(BaseModel):
     description: str | None
     created_at: datetime
     updated_at: datetime
+
+
+class FeatureCreate(BaseModel):
+    epic_id: uuid.UUID
+    name: str
+    requirements: str | None = None
+
+
+class FeatureUpdate(BaseModel):
+    name: str | None = None
+    requirements: str | None = None
+    status: str | None = None
+
+
+class FeatureRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    epic_id: uuid.UUID
+    name: str
+    requirements: str | None
+    status: str
+    acceptance_criteria_format: str
+    issue_number: int
+    issue_key: str
+    created_at: datetime
+    updated_at: datetime
