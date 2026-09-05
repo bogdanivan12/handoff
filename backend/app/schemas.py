@@ -1,7 +1,10 @@
 import uuid
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
+
+from app.knowledge_content import KnowledgeContent
 
 
 class ProductCreate(BaseModel):
@@ -142,6 +145,34 @@ class SprintRead(BaseModel):
     name: str
     start_date: date | None
     end_date: date | None
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class KnowledgeItemCreate(BaseModel):
+    scope: Literal["product", "project"]
+    scope_ref_id: uuid.UUID
+    content: KnowledgeContent
+    confidence: float | None = None
+    provenance: str = "manual"
+
+
+class KnowledgeItemUpdate(BaseModel):
+    content: KnowledgeContent | None = None
+    status: str | None = None
+
+
+class KnowledgeItemRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    type: str
+    scope: str
+    scope_ref_id: uuid.UUID
+    content: dict
+    confidence: float | None
+    provenance: str
     status: str
     created_at: datetime
     updated_at: datetime

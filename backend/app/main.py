@@ -9,6 +9,7 @@ from app.routers.epics import router as epics_router
 from app.routers.features import router as features_router
 from app.routers.projects import router as projects_router
 from app.routers.sprints import router as sprints_router
+from app.routers.knowledge_items import router as knowledge_items_router
 
 app = FastAPI(title="Handoff API")
 
@@ -26,3 +27,4 @@ app.include_router(epics_router)
 app.include_router(features_router)
 app.include_router(projects_router)
 app.include_router(sprints_router)
+app.include_router(knowledge_items_router)
