@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { Button } from "@/components/ui/button";
@@ -79,6 +79,9 @@ export function ProductSettingsPage() {
     return (
       <div className="mx-auto max-w-2xl p-8">
         <p className="text-red-600">Couldn't load this page. It may have been deleted.</p>
+        <Link to="/" className="text-sm underline">
+          Back to Products
+        </Link>
       </div>
     );
   }
@@ -94,6 +97,8 @@ export function ProductSettingsPage() {
           { label: "Settings", to: `/products/${product.id}/settings` },
         ]}
       />
+
+      <h1 className="mb-4 text-2xl font-semibold">{product.name} — Settings</h1>
 
       <section className="mb-8">
         <div className="mb-4 flex items-center justify-between">
