@@ -210,3 +210,41 @@ class AcceptanceCriterion(Base):
     checked_by: Mapped[uuid.UUID | None] = mapped_column(GUID, default=None)
     notes: Mapped[str | None] = mapped_column(Text, default=None)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class TaskDependency(Base):
+    __tablename__ = "task_dependencies"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID, primary_key=True, default=uuid.uuid4)
+    task_id: Mapped[uuid.UUID] = mapped_column(GUID, ForeignKey("tasks.id", ondelete="CASCADE"))
+    depends_on_task_id: Mapped[uuid.UUID] = mapped_column(
+        GUID, ForeignKey("tasks.id", ondelete="CASCADE")
+    )
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    depends_on_task: Mapped["Task"] = relationship(foreign_keys=[depends_on_task_id])
+
+    __table_args__ = (
+        CheckConstraint("task_id != depends_on_task_id", name="ck_task_dependencies_no_self_link"),
+    )
+
+
+class FeatureDependency(Base):
+    __tablename__ = "feature_dependencies"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID, primary_key=True, default=uuid.uuid4)
+    feature_id: Mapped[uuid.UUID] = mapped_column(
+        GUID, ForeignKey("features.id", ondelete="CASCADE")
+    )
+    depends_on_feature_id: Mapped[uuid.UUID] = mapped_column(
+        GUID, ForeignKey("features.id", ondelete="CASCADE")
+    )
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    depends_on_feature: Mapped["Feature"] = relationship(foreign_keys=[depends_on_feature_id])
+
+    __table_args__ = (
+        CheckConstraint(
+            "feature_id != depends_on_feature_id", name="ck_feature_dependencies_no_self_link"
+        ),
+    )
