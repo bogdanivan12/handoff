@@ -1,7 +1,8 @@
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Date, ForeignKey, Text, func
+from sqlalchemy import CheckConstraint, Date, ForeignKey, JSON, Numeric, Text, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from app.db_types import GUID
@@ -117,3 +118,38 @@ class Feature(Base):
     @property
     def issue_key(self) -> str:
         return f"{self.epic.initiative.product.key_prefix}-{self.issue_number}"
+
+
+class KnowledgeItem(Base):
+    __tablename__ = "knowledge_items"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID, primary_key=True, default=uuid.uuid4)
+    type: Mapped[str] = mapped_column(Text)
+    scope: Mapped[str] = mapped_column(Text)
+    scope_ref_id: Mapped[uuid.UUID] = mapped_column(GUID)
+    content: Mapped[dict] = mapped_column(JSONB().with_variant(JSON(), "sqlite"))
+    confidence: Mapped[float | None] = mapped_column(Numeric(3, 2), default=None)
+    provenance: Mapped[str] = mapped_column(Text, default="manual", server_default="manual")
+    source_ref_type: Mapped[str | None] = mapped_column(Text, default=None)
+    source_ref_id: Mapped[uuid.UUID | None] = mapped_column(GUID, default=None)
+    status: Mapped[str] = mapped_column(Text, default="active", server_default="active")
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+
+
+class KnowledgeRelation(Base):
+    __tablename__ = "knowledge_relations"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID, primary_key=True, default=uuid.uuid4)
+    from_item_id: Mapped[uuid.UUID] = mapped_column(
+        GUID, ForeignKey("knowledge_items.id", ondelete="CASCADE")
+    )
+    to_item_id: Mapped[uuid.UUID] = mapped_column(
+        GUID, ForeignKey("knowledge_items.id", ondelete="CASCADE")
+    )
+    relation_type: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    __table_args__ = (
+        CheckConstraint("from_item_id != to_item_id", name="ck_knowledge_relations_no_self_link"),
+    )
