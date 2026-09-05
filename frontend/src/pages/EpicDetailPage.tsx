@@ -103,17 +103,22 @@ export function EpicDetailPage() {
 
       <div className="flex flex-col gap-2">
         {features.map((feature) => (
-          <Card key={feature.id}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="rounded bg-blue-100 px-2 py-0.5 font-mono text-xs text-blue-800">
-                  {feature.issue_key}
-                </span>
-                {feature.name}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">{feature.status}</CardContent>
-          </Card>
+          <Link
+            key={feature.id}
+            to={`/products/${productId}/initiatives/${initiativeId}/epics/${epicId}/features/${feature.id}`}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <span className="rounded bg-blue-100 px-2 py-0.5 font-mono text-xs text-blue-800">
+                    {feature.issue_key}
+                  </span>
+                  {feature.name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">{feature.status}</CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
     </div>

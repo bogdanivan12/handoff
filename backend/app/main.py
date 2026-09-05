@@ -11,6 +11,8 @@ from app.routers.projects import router as projects_router
 from app.routers.sprints import router as sprints_router
 from app.routers.knowledge_items import router as knowledge_items_router
 from app.routers.knowledge_relations import router as knowledge_relations_router
+from app.routers.tasks import router as tasks_router
+from app.routers.acceptance_criteria import router as acceptance_criteria_router
 
 app = FastAPI(title="Handoff API")
 
@@ -30,3 +32,5 @@ app.include_router(projects_router)
 app.include_router(sprints_router)
 app.include_router(knowledge_items_router)
 app.include_router(knowledge_relations_router)
+app.include_router(tasks_router)
+app.include_router(acceptance_criteria_router)

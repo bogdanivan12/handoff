@@ -6,6 +6,7 @@ from sqlalchemy import select
 from app.db import get_db
 from app.main import app
 from app.models import (
+    AcceptanceCriterion,
     Epic,
     Feature,
     Initiative,
@@ -14,6 +15,7 @@ from app.models import (
     Product,
     Project,
     Sprint,
+    Task,
 )
 
 
@@ -134,6 +136,68 @@ def test_can_create_knowledge_item_and_relation(db_session):
             )
             loaded = result.scalar_one()
             assert loaded.content["chosen"] == "Postgres"
+            break
+
+    asyncio.run(_run())
+
+
+def test_task_shares_issue_counter_with_feature_and_has_acceptance_criteria(db_session):
+    async def _run():
+        override = app.dependency_overrides[get_db]
+        async for session in override():
+            product = Product(name="Handoff", key_prefix="HAND")
+            session.add(product)
+            await session.flush()
+
+            initiative = Initiative(product_id=product.id, name="Core")
+            session.add(initiative)
+            await session.flush()
+
+            epic = Epic(initiative_id=initiative.id, name="Auth")
+            session.add(epic)
+            await session.flush()
+
+            feature = Feature(epic_id=epic.id, name="Login", issue_number=1)
+            session.add(feature)
+            await session.flush()
+
+            project = Project(product_id=product.id, name="Web App")
+            session.add(project)
+            await session.flush()
+
+            task = Task(
+                feature_id=feature.id,
+                project_id=project.id,
+                title="Wire up login form",
+                task_type="feature",
+                issue_number=2,
+            )
+            session.add(task)
+            await session.flush()
+
+            criterion = AcceptanceCriterion(
+                task_id=task.id, format="basic", description="Form submits"
+            )
+            session.add(criterion)
+            await session.commit()
+
+            result = await session.execute(
+                select(Task)
+                .where(Task.id == task.id)
+                .options(
+                    selectinload(Task.feature)
+                    .selectinload(Feature.epic)
+                    .selectinload(Epic.initiative)
+                    .selectinload(Initiative.product)
+                )
+            )
+            loaded = result.scalar_one()
+            assert loaded.issue_key == "HAND-2"
+
+            result = await session.execute(
+                select(AcceptanceCriterion).where(AcceptanceCriterion.task_id == task.id)
+            )
+            assert result.scalar_one().description == "Form submits"
             break
 
     asyncio.run(_run())

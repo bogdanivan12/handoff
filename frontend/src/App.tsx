@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import { EpicDetailPage } from "@/pages/EpicDetailPage";
+import { FeatureDetailPage } from "@/pages/FeatureDetailPage";
 import { HealthPage } from "@/pages/HealthPage";
 import { InitiativeDetailPage } from "@/pages/InitiativeDetailPage";
 import { ProductDetailPage } from "@/pages/ProductDetailPage";
@@ -24,6 +25,10 @@ function App() {
         <Route
           path="/products/:productId/initiatives/:initiativeId/epics/:epicId"
           element={<EpicDetailPage />}
+        />
+        <Route
+          path="/products/:productId/initiatives/:initiativeId/epics/:epicId/features/:featureId"
+          element={<FeatureDetailPage />}
         />
       </Routes>
     </BrowserRouter>

@@ -74,3 +74,25 @@ def test_delete_project(db_session):
 
     response = client.get(f"/projects/{project_id}")
     assert response.status_code == 404
+
+
+def test_delete_project_with_tasks_returns_409(db_session):
+    product_id = _create_product()
+    project = client.post("/projects", json={"product_id": product_id, "name": "Web App"}).json()
+    initiative = client.post(
+        "/initiatives", json={"product_id": product_id, "name": "Core"}
+    ).json()
+    epic = client.post("/epics", json={"initiative_id": initiative["id"], "name": "Auth"}).json()
+    feature = client.post("/features", json={"epic_id": epic["id"], "name": "Login"}).json()
+    client.post(
+        "/tasks",
+        json={
+            "feature_id": feature["id"],
+            "project_id": project["id"],
+            "title": "Wire up login form",
+            "task_type": "feature",
+        },
+    )
+
+    response = client.delete(f"/projects/{project['id']}")
+    assert response.status_code == 409
