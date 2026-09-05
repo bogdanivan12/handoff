@@ -112,6 +112,19 @@ def test_update_criterion_rejects_wrong_task(db_session):
     assert response.status_code == 404
 
 
+def test_delete_criterion_rejects_wrong_task(db_session):
+    task_a = _create_task()
+    task_b = _create_task()
+
+    response = client.post(
+        f"/tasks/{task_a}/acceptance-criteria", json={"format": "basic", "description": "x"}
+    )
+    criterion_id = response.json()["id"]
+
+    response = client.delete(f"/tasks/{task_b}/acceptance-criteria/{criterion_id}")
+    assert response.status_code == 404
+
+
 def test_delete_criterion(db_session):
     task_id = _create_task()
     response = client.post(

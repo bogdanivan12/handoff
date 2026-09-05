@@ -32,7 +32,9 @@ export function FeatureDetailPage() {
 
   const loadTasks = () => {
     if (!featureId) return;
-    api.listTasks(featureId).then(setTasks);
+    api.listTasks(featureId).then(setTasks).catch(() => {
+      // best-effort refresh; the list simply stays stale until the next successful load
+    });
   };
 
   const load = () => {
@@ -122,6 +124,7 @@ export function FeatureDetailPage() {
 
       {openTaskId && (
         <TaskPanel
+          key={openTaskId}
           taskId={openTaskId === "new" ? null : openTaskId}
           featureId={feature.id}
           projects={projects}

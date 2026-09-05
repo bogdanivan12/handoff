@@ -163,8 +163,13 @@ export const api = {
   }) => request<KnowledgeItem>("/knowledge-items", { method: "POST", body: JSON.stringify(data) }),
 
   listTasks: (featureId: string) => request<Task[]>(`/tasks?feature_id=${featureId}`),
-  createTask: (data: { feature_id: string; project_id: string; title: string; task_type: string }) =>
-    request<Task>("/tasks", { method: "POST", body: JSON.stringify(data) }),
+  createTask: (data: {
+    feature_id: string;
+    project_id: string;
+    title: string;
+    task_type: string;
+    context?: string;
+  }) => request<Task>("/tasks", { method: "POST", body: JSON.stringify(data) }),
   getTask: (id: string) => request<Task>(`/tasks/${id}`),
   updateTask: (
     id: string,

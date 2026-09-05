@@ -44,7 +44,13 @@ export function TaskPanel({ taskId, featureId, projects, onClose, onSaved }: Tas
       if (taskId) {
         await api.updateTask(taskId, { title, task_type: taskType, status, context });
       } else {
-        await api.createTask({ feature_id: featureId, project_id: projectId, title, task_type: taskType });
+        await api.createTask({
+          feature_id: featureId,
+          project_id: projectId,
+          title,
+          task_type: taskType,
+          context,
+        });
       }
       onSaved();
     } catch {
@@ -107,7 +113,12 @@ export function TaskPanel({ taskId, featureId, projects, onClose, onSaved }: Tas
           <option value="chore">Chore</option>
           <option value="research">Research</option>
         </select>
-        {!taskId && (
+        {!taskId && projects.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            Create a Project for this Product before adding tasks.
+          </p>
+        )}
+        {!taskId && projects.length > 0 && (
           <select
             className="rounded border px-2 py-1"
             value={projectId}
@@ -139,7 +150,9 @@ export function TaskPanel({ taskId, featureId, projects, onClose, onSaved }: Tas
           value={context}
           onChange={(event) => setContext(event.target.value)}
         />
-        <Button type="submit">{taskId ? "Save" : "Create"}</Button>
+        <Button type="submit" disabled={!taskId && projects.length === 0}>
+          {taskId ? "Save" : "Create"}
+        </Button>
       </form>
 
       {taskId && (

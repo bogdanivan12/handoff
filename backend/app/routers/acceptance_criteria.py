@@ -27,7 +27,7 @@ async def list_acceptance_criteria(
     result = await db.execute(
         select(AcceptanceCriterion)
         .where(AcceptanceCriterion.task_id == task_id)
-        .order_by(AcceptanceCriterion.position)
+        .order_by(AcceptanceCriterion.position, AcceptanceCriterion.created_at)
     )
     return list(result.scalars().all())
 

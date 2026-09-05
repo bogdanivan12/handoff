@@ -201,6 +201,11 @@ class AcceptanceCriterion(Base):
     then_: Mapped[str | None] = mapped_column(Text, default=None)
     position: Mapped[int] = mapped_column(default=0, server_default="0")
     checked: Mapped[bool] = mapped_column(default=False, server_default="false")
+    # Explicit DateTime(timezone=True) required: this column is set from
+    # application code (datetime.now(timezone.utc)), unlike created_at/
+    # updated_at which are always server-side (func.now()) and so never
+    # surface SQLAlchemy's naive-vs-aware mismatch. Any future column that
+    # binds a Python-constructed datetime needs the same explicit type.
     checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     checked_by: Mapped[uuid.UUID | None] = mapped_column(GUID, default=None)
     notes: Mapped[str | None] = mapped_column(Text, default=None)

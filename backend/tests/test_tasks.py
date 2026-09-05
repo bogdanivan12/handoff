@@ -139,6 +139,45 @@ def test_create_task_rejects_missing_sprint(db_session):
     assert response.status_code == 404
 
 
+def test_create_task_rejects_project_from_different_product(db_session):
+    feature_a, _ = _create_feature_and_project()
+    _, project_b = _create_feature_and_project()
+
+    response = client.post(
+        "/tasks",
+        json={
+            "feature_id": feature_a,
+            "project_id": project_b,
+            "title": "Cross-product",
+            "task_type": "feature",
+        },
+    )
+    assert response.status_code == 400
+
+
+def test_create_task_rejects_sprint_from_different_product(db_session):
+    feature_a, project_a = _create_feature_and_project()
+
+    product_b = client.post(
+        "/products", json={"name": "Other", "key_prefix": uuid.uuid4().hex[:8].upper()}
+    ).json()
+    sprint_b = client.post(
+        "/sprints", json={"product_id": product_b["id"], "name": "Sprint 1"}
+    ).json()
+
+    response = client.post(
+        "/tasks",
+        json={
+            "feature_id": feature_a,
+            "project_id": project_a,
+            "sprint_id": sprint_b["id"],
+            "title": "Cross-product sprint",
+            "task_type": "feature",
+        },
+    )
+    assert response.status_code == 400
+
+
 def test_get_task_not_found(db_session):
     response = client.get("/tasks/00000000-0000-0000-0000-000000000000")
     assert response.status_code == 404

@@ -51,6 +51,15 @@ async def create_task(payload: TaskCreate, db: AsyncSession = Depends(get_db)) -
     epic = await db.get(Epic, feature.epic_id)
     initiative = await db.get(Initiative, epic.initiative_id)
 
+    if project.product_id != initiative.product_id:
+        raise HTTPException(
+            status_code=400, detail="Project does not belong to this Feature's Product"
+        )
+    if payload.sprint_id is not None and sprint.product_id != initiative.product_id:
+        raise HTTPException(
+            status_code=400, detail="Sprint does not belong to this Feature's Product"
+        )
+
     issue_number = await allocate_issue_number(db, initiative.product_id)
 
     task = Task(
