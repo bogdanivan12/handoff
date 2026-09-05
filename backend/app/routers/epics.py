@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db
-from app.models import Epic
+from app.models import Epic, Initiative
 from app.schemas import EpicCreate, EpicRead, EpicUpdate
 
 router = APIRouter(prefix="/epics", tags=["epics"])
@@ -23,6 +23,10 @@ async def list_epics(
 
 @router.post("", response_model=EpicRead, status_code=201)
 async def create_epic(payload: EpicCreate, db: AsyncSession = Depends(get_db)) -> Epic:
+    initiative = await db.get(Initiative, payload.initiative_id)
+    if initiative is None:
+        raise HTTPException(status_code=404, detail="Initiative not found")
+
     epic = Epic(**payload.model_dump())
     db.add(epic)
     await db.commit()

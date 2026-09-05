@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db
-from app.models import Initiative
+from app.models import Initiative, Product
 from app.schemas import InitiativeCreate, InitiativeRead, InitiativeUpdate
 
 router = APIRouter(prefix="/initiatives", tags=["initiatives"])
@@ -25,6 +25,10 @@ async def list_initiatives(
 async def create_initiative(
     payload: InitiativeCreate, db: AsyncSession = Depends(get_db)
 ) -> Initiative:
+    product = await db.get(Product, payload.product_id)
+    if product is None:
+        raise HTTPException(status_code=404, detail="Product not found")
+
     initiative = Initiative(**payload.model_dump())
     db.add(initiative)
     await db.commit()
