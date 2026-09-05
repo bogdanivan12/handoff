@@ -60,6 +60,19 @@ export interface Feature {
   updated_at: string;
 }
 
+export interface KnowledgeItem {
+  id: string;
+  type: string;
+  scope: string;
+  scope_ref_id: string;
+  content: Record<string, unknown>;
+  confidence: number | null;
+  provenance: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     headers: { "Content-Type": "application/json" },
@@ -106,4 +119,12 @@ export const api = {
     start_date?: string;
     end_date?: string;
   }) => request<Sprint>("/sprints", { method: "POST", body: JSON.stringify(data) }),
+
+  listKnowledgeItems: (scope: string, scopeRefId: string) =>
+    request<KnowledgeItem[]>(`/knowledge-items?scope=${scope}&scope_ref_id=${scopeRefId}`),
+  createKnowledgeItem: (data: {
+    scope: string;
+    scope_ref_id: string;
+    content: Record<string, unknown>;
+  }) => request<KnowledgeItem>("/knowledge-items", { method: "POST", body: JSON.stringify(data) }),
 };

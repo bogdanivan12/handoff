@@ -1,7 +1,10 @@
 import uuid
 from datetime import date, datetime
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.knowledge_content import KnowledgeContent
 
 
 class ProductCreate(BaseModel):
@@ -145,3 +148,47 @@ class SprintRead(BaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
+
+
+class KnowledgeItemCreate(BaseModel):
+    scope: Literal["product", "project"]
+    scope_ref_id: uuid.UUID
+    content: KnowledgeContent
+    confidence: float | None = Field(default=None, ge=0, le=1)
+    provenance: Literal["manual", "extracted_from_task", "extracted_from_agent_session"] = "manual"
+
+
+class KnowledgeItemUpdate(BaseModel):
+    content: KnowledgeContent | None = None
+    status: Literal["draft", "active", "superseded", "conflicting", "rejected"] | None = None
+
+
+class KnowledgeItemRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    type: str
+    scope: str
+    scope_ref_id: uuid.UUID
+    content: dict
+    confidence: float | None
+    provenance: str
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class KnowledgeRelationCreate(BaseModel):
+    from_item_id: uuid.UUID
+    to_item_id: uuid.UUID
+    relation_type: Literal["supersedes", "conflicts_with", "derived_from", "refines"]
+
+
+class KnowledgeRelationRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    from_item_id: uuid.UUID
+    to_item_id: uuid.UUID
+    relation_type: str
+    created_at: datetime

@@ -78,7 +78,7 @@ class TechnicalFactContent(BaseModel):
     kind: Literal["technical_fact"] = "technical_fact"
     subject: str
     fact: str
-    verified_at: str | None = None
+    verified_at: str
 
 
 class KnownIssueContent(BaseModel):
@@ -86,7 +86,7 @@ class KnownIssueContent(BaseModel):
     subject: str
     description: str
     workaround: str | None = None
-    status: str = "open"
+    status: str
 
 
 KnowledgeContent = Annotated[
@@ -1097,7 +1097,7 @@ export function ProductKnowledgePage() {
           kind,
           subject: fields.subject ?? "",
           fact: fields.fact ?? "",
-          verified_at: fields.verified_at || undefined,
+          verified_at: fields.verified_at ?? "",
         };
       case "known_issue":
         return {
@@ -1105,7 +1105,7 @@ export function ProductKnowledgePage() {
           subject: fields.subject ?? "",
           description: fields.description ?? "",
           workaround: fields.workaround || undefined,
-          status: fields.status || "open",
+          status: fields.status ?? "",
         };
     }
   };
@@ -1322,6 +1322,7 @@ export function ProductKnowledgePage() {
                 type="date"
                 value={fields.verified_at ?? ""}
                 onChange={(event) => setField("verified_at", event.target.value)}
+                required
               />
             </>
           )}
@@ -1340,6 +1341,13 @@ export function ProductKnowledgePage() {
                 placeholder="Description"
                 value={fields.description ?? ""}
                 onChange={(event) => setField("description", event.target.value)}
+                required
+              />
+              <input
+                className="rounded border px-2 py-1"
+                placeholder="Status (e.g. open, resolved)"
+                value={fields.status ?? ""}
+                onChange={(event) => setField("status", event.target.value)}
                 required
               />
               <input
