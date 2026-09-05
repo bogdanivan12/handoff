@@ -53,7 +53,9 @@ UPDATE products SET next_issue_number = next_issue_number + 1
 WHERE id = :product_id RETURNING next_issue_number;
 ```
 
-The resulting value becomes the new Feature's `issue_number`. This keeps
+`RETURNING` yields the *post*-increment value, so the new Feature's
+`issue_number` is that value minus one (the pre-increment value) — e.g. a
+fresh Product's first Feature gets `issue_number = 1`, not `2`. This keeps
 the counter monotonic per Product without a dynamically-created Postgres
 sequence per row (simpler migrations, no per-row DDL).
 
