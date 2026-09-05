@@ -299,3 +299,25 @@ class TaskDependencyRead(BaseModel):
 class TaskIsBlockedRead(BaseModel):
     is_blocked: bool
     blocking_tasks: list[TaskDependencyTaskSummary]
+
+
+class FeatureDependencyFeatureSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    issue_key: str
+    name: str
+    status: str
+
+
+class FeatureDependencyCreate(BaseModel):
+    depends_on_feature_id: uuid.UUID
+
+
+class FeatureDependencyRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    feature_id: uuid.UUID
+    depends_on_feature: FeatureDependencyFeatureSummary
+    created_at: datetime
