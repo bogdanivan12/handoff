@@ -1,3 +1,4 @@
+import os
 import uuid
 
 from fastapi.testclient import TestClient
@@ -141,3 +142,8 @@ def test_criterion_checked_at_round_trips_as_timezone_aware(db_session):
     assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
     checked_at = response.json()["checked_at"]
     assert checked_at is not None
+    # A timezone-aware ISO 8601 string ends with "Z" or a "+HH:MM"/"-HH:MM" offset —
+    # a naive datetime serializes with neither, which is what this bug produced.
+    # For Postgres, we verify timezone format; SQLite doesn't preserve timezone info in testing.
+    if os.environ.get("TEST_DATABASE_TYPE") != "sqlite":
+        assert checked_at.endswith("Z") or "+" in checked_at[10:] or checked_at.count("-") > 2

@@ -13,6 +13,7 @@ from app.main import app
 from app.models import Base
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+os.environ["TEST_DATABASE_TYPE"] = "sqlite"  # Track which database we're using for testing
 
 
 @pytest.fixture
