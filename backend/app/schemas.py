@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.knowledge_content import KnowledgeContent
 
@@ -154,7 +154,7 @@ class KnowledgeItemCreate(BaseModel):
     scope: Literal["product", "project"]
     scope_ref_id: uuid.UUID
     content: KnowledgeContent
-    confidence: float | None = None
+    confidence: float | None = Field(default=None, ge=0, le=1)
     provenance: str = "manual"
 
 
