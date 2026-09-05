@@ -27,6 +27,26 @@ export interface Epic {
   updated_at: string;
 }
 
+export interface Project {
+  id: string;
+  product_id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Sprint {
+  id: string;
+  product_id: string;
+  name: string;
+  start_date: string | null;
+  end_date: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Feature {
   id: string;
   epic_id: string;
@@ -74,4 +94,16 @@ export const api = {
   listFeatures: (epicId: string) => request<Feature[]>(`/features?epic_id=${epicId}`),
   createFeature: (data: { epic_id: string; name: string; requirements?: string }) =>
     request<Feature>("/features", { method: "POST", body: JSON.stringify(data) }),
+
+  listProjects: (productId: string) => request<Project[]>(`/projects?product_id=${productId}`),
+  createProject: (data: { product_id: string; name: string; description?: string }) =>
+    request<Project>("/projects", { method: "POST", body: JSON.stringify(data) }),
+
+  listSprints: (productId: string) => request<Sprint[]>(`/sprints?product_id=${productId}`),
+  createSprint: (data: {
+    product_id: string;
+    name: string;
+    start_date?: string;
+    end_date?: string;
+  }) => request<Sprint>("/sprints", { method: "POST", body: JSON.stringify(data) }),
 };
