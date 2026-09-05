@@ -192,3 +192,46 @@ class KnowledgeRelationRead(BaseModel):
     to_item_id: uuid.UUID
     relation_type: str
     created_at: datetime
+
+
+class TaskCreate(BaseModel):
+    feature_id: uuid.UUID
+    project_id: uuid.UUID
+    sprint_id: uuid.UUID | None = None
+    title: str
+    task_type: Literal["feature", "bug", "improvement", "chore", "research"]
+    context: str | None = None
+    scope: str | None = None
+    out_of_scope: str | None = None
+    position: int | None = None
+
+
+class TaskUpdate(BaseModel):
+    title: str | None = None
+    task_type: Literal["feature", "bug", "improvement", "chore", "research"] | None = None
+    status: Literal["todo", "in_progress", "done", "outdated"] | None = None
+    sprint_id: uuid.UUID | None = None
+    context: str | None = None
+    scope: str | None = None
+    out_of_scope: str | None = None
+    position: int | None = None
+
+
+class TaskRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    feature_id: uuid.UUID
+    project_id: uuid.UUID
+    sprint_id: uuid.UUID | None
+    title: str
+    task_type: str
+    status: str
+    issue_number: int
+    issue_key: str
+    context: str | None
+    scope: str | None
+    out_of_scope: str | None
+    position: int | None
+    created_at: datetime
+    updated_at: datetime
