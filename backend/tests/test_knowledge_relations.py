@@ -119,3 +119,19 @@ def test_delete_relation(db_session):
 
     response = client.delete(f"/knowledge-relations/{relation_id}")
     assert response.status_code == 204
+
+
+def test_deleting_knowledge_item_removes_its_relations(db_session):
+    item_a = _create_item("A")
+    item_b = _create_item("B")
+    client.post(
+        "/knowledge-relations",
+        json={"from_item_id": item_b, "to_item_id": item_a, "relation_type": "supersedes"},
+    )
+
+    response = client.delete(f"/knowledge-items/{item_a}")
+    assert response.status_code == 204
+
+    response = client.get(f"/knowledge-relations?from_item_id={item_b}")
+    assert response.status_code == 200
+    assert response.json() == []

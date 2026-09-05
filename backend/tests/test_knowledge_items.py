@@ -225,3 +225,31 @@ def test_list_knowledge_items_rejects_invalid_scope(db_session):
 
     response = client.get(f"/knowledge-items?scope=bogus&scope_ref_id={product_id}")
     assert response.status_code == 422
+
+
+def test_create_knowledge_item_rejects_technical_fact_missing_verified_at(db_session):
+    product_id = _create_product()
+
+    response = client.post(
+        "/knowledge-items",
+        json={
+            "scope": "product",
+            "scope_ref_id": product_id,
+            "content": {"kind": "technical_fact", "subject": "API", "fact": "rate limited"},
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_create_knowledge_item_rejects_known_issue_missing_status(db_session):
+    product_id = _create_product()
+
+    response = client.post(
+        "/knowledge-items",
+        json={
+            "scope": "product",
+            "scope_ref_id": product_id,
+            "content": {"kind": "known_issue", "subject": "Login", "description": "fails sometimes"},
+        },
+    )
+    assert response.status_code == 422
